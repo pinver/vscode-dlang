@@ -16,7 +16,7 @@ let socket: net.Socket;
 var timer: any;
 var button: any;
 var lastVersion: any;
-var maxStackSize = 999;
+var maxStackSize = 1; //999; 
 
 interface Versions {
     stack: number[],
@@ -198,6 +198,9 @@ export async function activate(context: vsc.ExtensionContext) {
         {
             var currentHash = hash( editor.document.getText() );
 
+            // Qua faceva cose per evitare di fare il comando in caso di ritorno ad un hash che era già stato eseguito
+            // ... noi emettiamo sempre il comando invece, a meno che non siamo in grado di 'ripescare' e passare
+            //     al matcher gli stessi problemi (cosa che yab POTREBBE FARE)
             if( versions.stack.length === 0 )
             {
                 versions.stack.push( currentHash );
