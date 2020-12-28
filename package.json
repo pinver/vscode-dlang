@@ -128,6 +128,11 @@
                     "${workspaceRoot}"
                 ],
                 "pattern": "$dub-test"
+            },
+            {
+                "name": "dmd-syntax",
+                "fileLocation": "absolute",
+                "pattern": "$dmd-syntax"
             }
         ],
         "problemPatterns": [
@@ -146,6 +151,15 @@
                 "file": 1,
                 "location": 2,
                 "message": 3
+            },
+            {
+                "name": "dmd-syntax",
+                "regexp": "^(.*)\\((\\d+),(\\d+)\\):\\s+(Warning|Error):\\s+(.*)$",
+                "file": 1,
+                "line": 2,
+                "column": 3,
+                "severity": 4,
+                "message": 5
             }
         ],
         "taskDefinitions": [
