@@ -24,7 +24,7 @@ interface Versions {
 }
 var versions: Versions = { stack: [], position: -1 };
 
-var onIdleEnabled: boolean = false;
+var onIdleEnabled: boolean = true;
 
 export async function activate(context: vsc.ExtensionContext) {
     vsc.window.showInformationMessage('Estension DLANG Personale 2');
