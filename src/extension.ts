@@ -3,7 +3,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
-import * as rl from 'readline';
+//import * as rl from 'readline';
 import * as net from 'net';
 import * as vsc from 'vscode';
 import * as lc from 'vscode-languageclient';
@@ -13,7 +13,275 @@ import DubTaskProvider from './task-provider';
 
 let socket: net.Socket;
 
+var timer: any;
+var button: any;
+var lastVersion: any;
+var maxStackSize = 999;
+
+interface Versions {
+    stack: number[],
+    position: number
+}
+var versions: Versions = { stack: [], position: -1 };
+
+var onIdleEnabled: boolean = false;
+
 export async function activate(context: vsc.ExtensionContext) {
+    vsc.window.showInformationMessage('Estension DLANG Personale 2');
+
+    // ... on idle
+    function hash( text: any )
+    {
+        var hash = 0;
+        if( text.length === 0 )
+        {
+            return hash;
+        }
+        for( var i = 0; i < text.length; i++ )
+        {
+            var char = text.charCodeAt( i );
+            hash = ( ( hash << 5 ) - hash ) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+
+        return hash;
+    }
+    function doCommands()
+    {
+        /*
+        // ... esegui i comandi nell'array json uno dopo l'altro
+        function doNextCommand()
+        {
+            if( extensionConfig.commands.length > 0 )
+            {
+                var command = extensionConfig.commands.shift();
+                vsc.commands.executeCommand( command ).then( doNextCommand );
+            }
+        }
+        */
+
+        timer = undefined;
+
+        
+        // ... cerca l'estensione del file attuale, 'D' per esempio
+        let extension: string = getExtension();
+        /*
+        // ... cerca nella configurazione se c'e' un json per 'D'
+        let extensionConfig = vsc.workspace.getConfiguration( 'onIdle' ).get( 'commands', {} )[ extension ];
+        // ... esegui nel caso
+        if( extensionConfig && extensionConfig.enabled === true )
+        {
+            doNextCommand();
+        }
+        */
+       if( extension === "d" ){
+           vsc.window.showInformationMessage('On Idle per il D');
+
+           vsc.commands.executeCommand("workbench.action.tasks.runTask", "dmdsyntax" );
+        }
+
+    }
+    // ... ritorna l'estensione del file corrente, 'D' per esempio
+    function getExtension(): string
+    {
+        let editor = vsc.window.activeTextEditor;
+        if( editor && editor.document )
+        {
+            let ext = path.extname( editor.document.fileName );
+            if( ext && ext.length > 1 )
+            {
+                return ext.substr( 1 );
+            }
+        }
+        return "";
+    }
+    // ... ritorna se l'estensione e' enabled per questo file nella configurazione
+    function isEnabled(): boolean
+    {
+        let extension: string = getExtension();
+        console.log(extension);
+        /*
+        var commands = vsc.workspace.getConfiguration( 'onIdle' ).get( 'commands', {} )[ extension ];
+        return commands && commands.enabled;
+        */
+        return extension == "d" && onIdleEnabled;
+    }
+
+    function triggerCommands()
+    {
+        
+        //var delay = parseInt( vsc.workspace.getConfiguration( 'onIdle' ).get( 'delay' ) );
+        let delay: number = 2000;
+
+        clearTimeout( timer );
+        timer = undefined;
+
+        if( isEnabled() && delay > 0 )
+        {
+            var editor = vsc.window.activeTextEditor;
+            if( editor ){
+                var version = editor.document.version;
+
+                if( !lastVersion || version > lastVersion )
+                {
+                    timer = setTimeout( doCommands, delay );
+                }
+            }
+        }
+    }
+    function updateButton()
+    {
+        var extension = getExtension();
+
+        let enabled: boolean = isEnabled() === true;
+
+        //let buttonIcon: string = vsc.workspace.getConfiguration( 'onIdle' ).get( 'buttonIcon' );
+        let buttonIcon = "watch";
+
+        button.text = "$(" + buttonIcon + ") $(" + ( enabled ? "check" : "x" ) + ")";
+        button.command = 'onIdle.' + ( enabled ? 'disable' : 'enable' );
+        button.tooltip = ( enabled ? 'Disable' : 'Enable' ) + " On Idle for ." + extension + " files";
+
+        /*
+        var extension = getExtension();
+        var commands = vsc.workspace.getConfiguration( 'onIdle' ).get( 'commands', {} )[ extension ];
+
+        if( commands && commands && commands.commands.length > 0 )
+        {*/
+            button.show();
+        /*}
+        else
+        {
+            button.hide();
+        }*/
+    }
+    function createButton()
+    {
+        if( button )
+        {
+            button.dispose();
+        }
+
+        button = vsc.window.createStatusBarItem(
+            /*vsc.workspace.getConfiguration( 'onIdle' ).get( 'buttonAlignment' ) + 1*/ 1,
+            /*vsc.workspace.getConfiguration( 'onIdle' ).get( 'buttonPriority' )*/ 0);
+
+        context.subscriptions.push( button );
+
+        updateButton();
+    }
+
+    function configure( shouldEnable: boolean )
+    {
+        /*
+        versions = { stack: [], position: -1 };
+        var extension = getExtension();
+        var commands = vsc.workspace.getConfiguration( 'onIdle' ).get( 'commands', {} );
+        commands[ extension ].enabled = shouldEnable;
+        vsc.workspace.getConfiguration( 'onIdle' ).update( 'commands', commands, true );
+        */
+       onIdleEnabled = shouldEnable; updateButton();
+    }
+
+    context.subscriptions.push( vsc.workspace.onDidChangeTextDocument( function( editor )
+    {
+        if( editor && editor.document )
+        {
+            var currentHash = hash( editor.document.getText() );
+
+            if( versions.stack.length === 0 )
+            {
+                versions.stack.push( currentHash );
+                versions.position = 0;
+                triggerCommands();
+            }
+            else
+            {
+                var previous = versions.stack.indexOf( currentHash );
+                if( previous > -1 )
+                {
+                    if( previous < versions.position )
+                    {
+                        versions.position = previous;
+                    }
+                    else if( previous > versions.position )
+                    {
+                        versions.position = previous;
+                    }
+                }
+                else
+                {
+                    versions.stack.splice( versions.position + 1, versions.stack.length - versions.position );
+                    versions.stack.push( currentHash );
+                    versions.position = versions.stack.length - 1;
+
+                    if( versions.stack.length > maxStackSize )
+                    {
+                        var previousLength = versions.stack.length;
+                        versions.stack = versions.stack.splice( -maxStackSize );
+                        versions.position -= ( previousLength - maxStackSize );
+                    }
+
+                    triggerCommands();
+                }
+            }
+        }
+    } ) );
+
+    context.subscriptions.push( vsc.commands.registerCommand( 'onIdle.enable', function() { configure( true ); } ) );
+    context.subscriptions.push( vsc.commands.registerCommand( 'onIdle.disable', function() { configure( false ); } ) );
+
+    context.subscriptions.push( vsc.window.onDidChangeActiveTextEditor( function( e )
+    {
+        versions = { stack: [], position: -1 };
+        clearTimeout( timer );
+        timer = undefined;
+        updateButton();
+        if( e && e.document )
+        {
+            lastVersion = e.document.version - 1;
+        }
+    } ) );
+
+    vsc.workspace.onDidOpenTextDocument( function()
+    {
+        versions = { stack: [], position: -1 };
+        if( !button )
+        {
+            createButton();
+        }
+        else
+        {
+            clearTimeout( timer );
+            timer = undefined;
+            updateButton();
+        }
+    } );
+
+    context.subscriptions.push( vsc.workspace.onDidChangeConfiguration( function( e )
+    {
+        /*
+        if(
+            e.affectsConfiguration( 'onIdle.delay' ) ||
+            e.affectsConfiguration( 'onIdle.commands' ) )
+        {
+            triggerCommands();
+            updateButton();
+        }
+        else if(
+            e.affectsConfiguration( 'onIdle.buttonIcon' ) ||
+            e.affectsConfiguration( 'onIdle.buttonAlignment' ) ||
+            e.affectsConfiguration( 'onIdle.buttonPriority' ) )
+        {
+            createButton();
+        }
+        */
+    } ) );
+
+
+    // ... begin of vscode-dlang 
+
+
     vsc.workspace.registerTaskProvider('dub', new DubTaskProvider());
     let dlsPath = vsc.workspace.getConfiguration('d').get<string>('dlsPath') || await getDlsPath();
 
@@ -25,6 +293,8 @@ export async function activate(context: vsc.ExtensionContext) {
         }
     }
 
+    return vsc.window.showErrorMessage('Problema lanciando dls, nel plugin originale, ora installerebbe DLS');
+    /*
     dlsPath = '';
     let options: vsc.ProgressOptions = { location: vsc.ProgressLocation.Notification, title: 'Installing DLS' };
 
@@ -68,9 +338,14 @@ export async function activate(context: vsc.ExtensionContext) {
         await promise;
         return launchServer(context, dlsPath);
     });
+    */
 }
 
 export function deactivate() {
+    // .. on idle
+    versions = { stack: [], position: -1 };
+    clearTimeout( timer );
+    timer = undefined;
 }
 
 async function getDlsPath() {

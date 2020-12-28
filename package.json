@@ -217,6 +217,16 @@
                 ]
             }
         ],
+        "commands": [
+            {
+                "command": "onIdle.enable",
+                "title": "On Idle: Enable"
+            },
+            {
+                "command": "onIdle.disable",
+                "title": "On Idle: Disable"
+            }
+        ],
         "configuration": [
             {
                 "title": "D",
