@@ -83,7 +83,7 @@ export async function activate(context: vsc.ExtensionContext) {
                vsc.TaskScope.Workspace, //vsc.workspace.workspaceFolders[0], // scope: vsc.WorkspaceFolder | TasjScope,
                'check syntax with dmd', // name, is presented in the user interface
                'dmd 95 beta', // source: string, the task source, is presented to user inteface
-               new vsc.ShellExecution('/Users/pinver/dlang/dmd-2.095.0-beta.1/osx/bin/dmd -c -o- -i -J/Users/pinver/Lembas -g -vcolumns -color=on -Isrc -debug -unittest ${file} || true'), // shellExec
+               new vsc.ShellExecution('/Users/pinver/dlang/dmd-2.095.0-beta.1/osx/bin/dmd -c -o- -i -J/Users/pinver/Lembas -vcolumns -color=on -Isrc -debug -unittest ${file} || true'), // shellExec
                "dmd-syntax" // problemMatchers: string | string[] | undefined
            );
            vsc.tasks.executeTask(task);
@@ -120,7 +120,7 @@ export async function activate(context: vsc.ExtensionContext) {
     {
         
         //var delay = parseInt( vsc.workspace.getConfiguration( 'onIdle' ).get( 'delay' ) );
-        let delay: number = 2000;
+        let delay: number = 4000;
 
         clearTimeout( timer );
         timer = undefined;
