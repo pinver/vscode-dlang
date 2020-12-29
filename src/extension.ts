@@ -27,7 +27,7 @@ var versions: Versions = { stack: [], position: -1 };
 var onIdleEnabled: boolean = true;
 
 export async function activate(context: vsc.ExtensionContext) {
-    vsc.window.showInformationMessage('Estension DLANG Personale 2');
+    vsc.window.showInformationMessage('Estension DLANG Personale 3');
 
     // ... on idle
     function hash( text: any )
@@ -83,7 +83,7 @@ export async function activate(context: vsc.ExtensionContext) {
                vsc.TaskScope.Workspace, //vsc.workspace.workspaceFolders[0], // scope: vsc.WorkspaceFolder | TasjScope,
                'check syntax with dmd', // name, is presented in the user interface
                'dmd 95 beta', // source: string, the task source, is presented to user inteface
-               new vsc.ShellExecution('/Users/pinver/dlang/dmd-2.095.0-beta.1/osx/bin/dmd -c -o- -i -J/Users/pinver/Lembas -vcolumns -color=on -Isrc -debug -unittest ${file} || true'), // shellExec
+               new vsc.ShellExecution('/Users/pinver/dlang/dmd-2.095.0-beta.1/osx/bin/dmd -c -o- -J/Users/pinver/Lembas -vcolumns -color=on -Isrc -debug -unittest ${file} || true'), // shellExec
                "dmd-syntax" // problemMatchers: string | string[] | undefined
            );
            vsc.tasks.executeTask(task);
