@@ -445,14 +445,25 @@ function createServerWithStdio(dlsPath: string) {
 function createServerWithSocket(dlsPath: string) {
     let dls: cp.ChildProcess;
     return new Promise<cp.ChildProcess>(resolve => {
+        // Creates a new TCP server. 
+        // The connectionListener argument is automatically set as a listener for the 'connection' event.
         let server = net.createServer(s => {
+            // client connected
+            //vsc.window.showInformationMessage('DLS connected to us');
             socket = s;
             socket.setNoDelay(true);
+            // Event, emitted when the server closes.
+            // If connections exist, this event is not emitted until all connections are ended.
             server.close();
             resolve(dls);
         });
-
+        // Begin accepting connections on the specified port and host.
+        // If the host is omitted, the server will accept connections directed to any IPv4 address (INADDR_ANY).
+        // A port value of zero will assign a random port.
+        //
+        // For debugging, assign a port like 54345 here, and launch the server with a different port. Run DLS from terminal with ./dls --tcp=54345
         server.listen(0, '127.0.0.1', () => {
+            //vsc.window.showInformationMessage('Spawn DLS, port ' + (<net.AddressInfo>server.address()).port);
             dls = cp.spawn(dlsPath.trim(), ['--socket=' + (<net.AddressInfo>server.address()).port]);
         });
     });
