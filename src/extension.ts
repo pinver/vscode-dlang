@@ -75,7 +75,7 @@ export async function activate(context: vsc.ExtensionContext) {
         }
         */
        if( extension === "d" ){
-           vsc.window.showInformationMessage('On Idle per il D');
+           //vsc.window.showInformationMessage('On Idle per il D');
 
            //vsc.commands.executeCommand("workbench.action.tasks.runTask", "dmdsyntax" );
            let task = new vsc.Task(
@@ -83,7 +83,7 @@ export async function activate(context: vsc.ExtensionContext) {
                vsc.TaskScope.Workspace, //vsc.workspace.workspaceFolders[0], // scope: vsc.WorkspaceFolder | TasjScope,
                'check syntax with dmd', // name, is presented in the user interface
                'dmd 95 beta', // source: string, the task source, is presented to user inteface
-               new vsc.ShellExecution('/Users/pinver/dlang/dmd-2.095.0-beta.1/osx/bin/dmd -c -o- -J/Users/pinver/Lembas -vcolumns -color=on -Isrc -debug -unittest ${file} || true'), // shellExec
+               new vsc.ShellExecution('/Users/pinver/dlang/dmd-2.095.0-rc.1/osx/bin/dmd -c -o- -J/Users/pinver/Lembas -vcolumns -color=on -Isrc -debug -unittest ${file} || true'), // shellExec
                "dmd-syntax" // problemMatchers: string | string[] | undefined
            );
            vsc.tasks.executeTask(task);
